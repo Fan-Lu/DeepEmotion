@@ -2,8 +2,10 @@ import numpy as np
 import os
 import csv
 import matplotlib.pyplot as plt
+import torch
 
 class GetDataFromCSV:
+    PUBLIC_TRAIN_START_POINT = 0
     TRAIN_END_POINT = 28708 #28708 samples for training
     PUBLIC_TEST_START_POINT = 28709
     PUBLIC_TEST_END_POINT = 35887 #3589*2 samples for training
@@ -27,7 +29,7 @@ class GetDataFromCSV:
                     pixels_in_picture_format = np.reshape(pixels_formated, [48, 48])
                     train_data_y[k, :] = target
                     train_data_x[k, :, :] = pixels_in_picture_format
-                break
+
         return train_data_x, train_data_y
 
     def get_test_data(cls):
@@ -59,6 +61,7 @@ class GetDataFromCSV:
                 pixels_in_picture_format = np.reshape(pixels_formated, [48, 48])
                 data_y[k_mod, :] = target
                 data_x[k_mod, :, :] = pixels_in_picture_format
+
         return data_x, data_y
 
     def get_first_record(cls):
@@ -73,11 +76,12 @@ class GetDataFromCSV:
                 pixels_in_picture_format = np.reshape(pixels_formated, [48, 48])
                 data_y[0, :] = target
                 data_x[0, :, :] = pixels_in_picture_format
-                return data_x, data_y
+
+        return data_x, data_y
 
 
 if __name__ == "__main__":
     datacsv = GetDataFromCSV()
-    image, labels = datacsv.get_all_data()
-    print(len(image))
-    print(len(labels))
+    image, labels = datacsv.get_training_data()
+    #print(len(image))
+    print(labels)
