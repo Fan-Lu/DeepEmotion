@@ -4,10 +4,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from extract_data import GetDataFromCSV
 import torch
-import torchvision
-import torchvision.transforms as transforms
 import numpy as np
-import pandas as pd
 
 class Net(nn.Module):
 
@@ -41,7 +38,7 @@ class Net(nn.Module):
 
 
 net = Net()
-#net.cuda()
+net.cuda()
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
@@ -67,33 +64,35 @@ trainset = torch.utils.data.TensorDataset(f_l, labels)
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
 
 
-for epoch in range(2):  # loop over the dataset multiple times
+if __name__ == "__main__":
 
-    running_loss = 0.0
-    for i, data in enumerate(trainloader, 0):
-        # get the inputs
-        inputs, labels = data
+    for epoch in range(2):  # loop over the dataset multiple times
 
-        # wrap them in Variable
-        #inputs, labels = Variable(inputs.cuda()), Variable(labels.cuda())
-        inputs, labels = Variable(inputs), Variable(labels)
+        running_loss = 0.0
+        for i, data in enumerate(trainloader, 0):
+            # get the inputs
+            inputs, labels = data
 
-        labels = labels.resize(batch_size)
-        #print(labels)
-        # zero the parameter gradients
-        optimizer.zero_grad()
+            # wrap them in Variable
+            inputs, labels = Variable(inputs.cuda()), Variable(labels.cuda())
+            #inputs, labels = Variable(inputs), Variable(labels)
 
-        # forward + backward + optimize
-        outputs = net(inputs.float())
-        loss = criterion(outputs, labels.type(torch.LongTensor))
-        loss.backward()
-        optimizer.step()
+            labels = labels.resize(batch_size)
+            #print(labels)
+            # zero the parameter gradients
+            optimizer.zero_grad()
 
-        #print statistics
-        running_loss += loss.data[0]
-        if i % 2000 == 1999:    # print every 2000 mini-batches
-            print('[%d, %5d] loss: %.3f' %
-                  (epoch + 1, i + 1, running_loss / 2000))
-            running_loss = 0.0
+            # forward + backward + optimize
+            outputs = net(inputs.float())
+            loss = criterion(outputs, labels.type(torch.cuda.LongTensor))
+            loss.backward()
+            optimizer.step()
 
-print('Finished Training')
+            #print statistics
+            running_loss += loss.data[0]
+            if i % 200 :    # print every 2000 mini-batches
+                print('[%d, %5d] loss: %.3f' %
+                      (epoch + 1, i + 1, running_loss / 200))
+                running_loss = 0.0
+
+    print('Finished Training')
