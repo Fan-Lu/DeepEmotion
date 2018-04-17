@@ -1,9 +1,9 @@
 from torch.autograd import Variable
 import torch.optim as optim
-from extract_data import GetDataFromCSV, MyDataset
+from src.extract_data import GetDataFromCSV, MyDataset
 import torch
 import numpy as np
-from capsnet import CapsNet, MarginLoss
+from src.capsnet import CapsNet, MarginLoss
 from torch.optim import lr_scheduler
 
 import argparse
