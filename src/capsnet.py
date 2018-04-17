@@ -89,8 +89,8 @@ class CapsNet(nn.Module):
     def __init__(self, routing_iterations, n_classes=10):
         super(CapsNet, self).__init__()
         self.conv1 = nn.Conv2d(1, 256, kernel_size=9, stride=1)
-        self.primaryCaps = PrimaryCapsLayer(256, 32, 8, kernel_size=9, stride=2)  # outputs 6*6
-        self.num_primaryCaps = 32 * 6 * 6
+        self.primaryCaps = PrimaryCapsLayer(256, 32, 8, kernel_size=9, stride=2)  # outputs 6*6  sqrt(out/32)
+        self.num_primaryCaps = 32 * 16 * 16
         routing_module = AgreementRouting(self.num_primaryCaps, n_classes, routing_iterations)
         self.digitCaps = CapsLayer(self.num_primaryCaps, 8, n_classes, 16, routing_module)
 
