@@ -14,6 +14,7 @@ import keras.backend as K
 import tensorflow as tf
 from keras import initializers, layers
 from keras.datasets import mnist
+import keras
 
 
 class Length(layers.Layer):
@@ -202,8 +203,8 @@ def CapsNet(input_shape, n_class, num_routing):
     masked = Mask()([digitcaps, y])  # The true label is used to mask the output of capsule layer.
     x_recon = layers.Dense(512, activation='relu')(masked)
     x_recon = layers.Dense(1024, activation='relu')(x_recon)
-    x_recon = layers.Dense(784, activation='sigmoid')(x_recon)
-    x_recon = layers.Reshape(target_shape=[28, 28, 1], name='out_recon')(x_recon)
+    x_recon = layers.Dense(2304, activation='sigmoid')(x_recon)
+    x_recon = layers.Reshape(target_shape=[48, 48, 1], name='out_recon')(x_recon)
 
     # two-input-two-output keras Model
     return models.Model([x, y], [out_caps, x_recon])
@@ -221,20 +222,44 @@ def margin_loss(y_true, y_pred):
     return K.mean(K.sum(L, 1))
 
 # define model
-model = CapsNet(input_shape=[28, 28, 1],
-                n_class=10,
+model = CapsNet(input_shape=[48, 48, 1],
+                n_class=7,
                 num_routing=3)
 model.summary()
 try:
     plot_model(model, to_file='model.png', show_shapes=True)
 except Exception as e:
     print('No fancy plot {}'.format(e))
+#%%load data
+def loadfer2013():
+    
+    tmp = np.loadtxt("fer2013.csv", dtype=np.str, delimiter=",")
+    reader = tmp[1:,1]
+    TRAIN_END_POINT = len(reader)
+    train_data_x = np.zeros([TRAIN_END_POINT, 48, 48], dtype="uint8")
+    for k, data in enumerate(reader):
+       pixels_formated = [int(a) for a in data.split(" ")] 
+       pixels_in_picture_format = np.reshape(pixels_formated, [48, 48])
+       train_data_x[k, :, :] = pixels_in_picture_format
+    label = tmp[1:,0].astype(np.uint8)
+    return train_data_x, label
+
+data, label = loadfer2013()
 #%%
-(x_train, y_train), (x_test, y_test) = mnist.load_data()
-x_train = x_train.reshape(-1, 28, 28, 1).astype('float32') / 255.
-x_test = x_test.reshape(-1, 28, 28, 1).astype('float32') / 255.
-y_train = to_categorical(y_train.astype('float32'))
-y_test = to_categorical(y_test.astype('float32'))
+x_train = data[0:28700]
+y_train = label[0:28700]
+x_validation = data[28709:32298]
+y_validation = label[28709:32298]
+x_test = data[32298:]
+y_test = label[32298:]
+#%%
+x_train = x_train.reshape(-1, 48, 48, 1).astype('float32') / 255.
+x_validation = x_validation.reshape(-1, 48, 48, 1).astype('float32') / 255.
+x_test = x_test.reshape(-1, 48, 48, 1).astype('float32') / 255.
+
+y_train = keras.utils.to_categorical(y_train, 7)
+y_validation = keras.utils.to_categorical(y_validation, 7)
+y_test = keras.utils.to_categorical(y_test, 7)
 #%%
 def train(model, data):
     """
@@ -282,11 +307,12 @@ def train(model, data):
 #                        callbacks=[log, checkpoint, lr_decay])
     # -----------------------------------End: Training with data augmentation -----------------------------------#
 
-    model.save_weights('trained_model.h5')
+    model.save_weights('trained_model_weight_capsulenet.h5')
+    model.save('trained_capsuleNet_model.h5')
     print('Trained model saved to \'trained_model.h5\'')
 
     return model
 
 #%%
 
-train(model=model, data=((x_train, y_train), (x_test[:60], y_test[:60])))
+train(model=model, data=((x_train, y_train), (x_test, y_test)))
