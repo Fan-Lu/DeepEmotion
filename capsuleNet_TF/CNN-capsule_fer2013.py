@@ -1,11 +1,11 @@
-# -*- coding: utf-8 -*-
+ # -*- coding: utf-8 -*-
 """
 Created on Tue Apr 17 15:45:18 2018
 
 @author: yuxi
 """
 
-"""Train a simple CNN-Capsule Network on thefer2013 face emotion dataset.
+"""Train a simple CNN-Capsule Network on the fer2013 face emotion dataset.
 Without Data Augmentation:
 This is a fast Implement, just 20s/epcoh with a gtx 1070 gpu.
 """
