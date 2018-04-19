@@ -2,6 +2,8 @@ import numpy as np
 import os
 import csv
 import matplotlib.pyplot as plt
+import torch
+import torch.utils.data as data
 
 class GetDataFromCSV:
     TRAIN_END_POINT = 28708 #28708 samples for training
@@ -10,7 +12,7 @@ class GetDataFromCSV:
     PRIVATE_TEST_END_POINT = 35887
 
     DIR_PATH = os.path.dirname(os.path.realpath(__file__))
-    DATA_CSV_FILE = DIR_PATH + '/../data/fer2013.csv'
+    DATA_CSV_FILE = DIR_PATH + '/../data/fer2013/fer2013.csv'
 
     IMAGE_SIZE = 48 * 48
 
@@ -75,9 +77,22 @@ class GetDataFromCSV:
                 data_x[0, :, :] = pixels_in_picture_format
                 return data_x, data_y
 
+class MyDataset(data.Dataset):
+    def __init__(self, images, labels):
+        self.images = images
+        self.labels = labels
+
+    def __getitem__(self, index):
+        img, target = self.images[index], self.labels[index]
+        return img, target
+
+    def __len__(self):
+        return len(self.images)
 
 if __name__ == "__main__":
     datacsv = GetDataFromCSV()
     image, labels = datacsv.get_all_data()
+    image = torch.from_numpy(image).view(-1, 1, 48, 48)
+    test_dataset = MyDataset(image, labels)
     print(len(image))
     print(len(labels))
