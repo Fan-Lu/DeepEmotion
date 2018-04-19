@@ -212,6 +212,7 @@ model.fit(x_train, y_train,batch_size=batch_size,epochs=epochs,verbose=1, valida
 score = model.evaluate(x_test, y_test, verbose=0)
 
 model.save_weights('trained_model_capsuleNet.h5')
+model.save('CapsuleNet_model.h5')
 print('Trained model saved to \'trained_model.h5\'')
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])
