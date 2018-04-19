@@ -1,14 +1,21 @@
- # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
+"""
+Spyder Editor
+
+This is a temporary script file.
+"""
+
+# -*- coding: utf-8 -*-
 """
 Created on Tue Apr 17 15:45:18 2018
-
 @author: yuxi
 """
 
-"""Train a simple CNN-Capsule Network on the fer2013 face emotion dataset.
+"""Train a simple CNN-Capsule Network on the fer2013 images dataset.
 Without Data Augmentation:
 This is a fast Implement, just 20s/epcoh with a gtx 1070 gpu.
 """
+
 
 from keras import backend as K
 from keras.engine.topology import Layer
@@ -28,6 +35,7 @@ import matplotlib.pyplot as plt
 import time
 from scipy.misc import imsave
 import itertools
+from sklearn.metrics import classification_report, confusion_matrix
 
 
 # the squashing function.
@@ -151,7 +159,8 @@ class Capsule(Layer):
 
 batch_size = 128
 num_classes = 7
-epochs = 15
+epochs = 30
+class_names = ['Angry','Disgust','Fear','Happy','Sad','Surprise','Neutral']
 #%%load data
 def loadfer2013():
     
@@ -165,12 +174,12 @@ def loadfer2013():
        train_data_x[k, :, :] = pixels_in_picture_format
     label = tmp[1:,0].astype(np.uint8)
     return train_data_x, label
-   
+
 def create_plots(history):
 
     plt.plot(history.history['acc'])
     plt.plot(history.history['val_acc'])
-    plt.title('model accuracy')
+    plt.title('accuracy of CNN+CapsuleNet')
     plt.ylabel('accuracy')
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='upper left')
@@ -179,7 +188,7 @@ def create_plots(history):
 
     plt.plot(history.history['loss'])
     plt.plot(history.history['val_loss'])
-    plt.title('model loss')
+    plt.title('margin_loss of CNN+CapsuleNet')
     plt.ylabel('loss')
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='upper left')
@@ -215,9 +224,9 @@ def plot_confusion_matrix(confusionmatrix, classes,
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
-
-#%%    
+#%%
 data, label = loadfer2013()
+#%%
 x_train = data[0:28700]
 y_train = label[0:28700]
 x_validation = data[28709:32298]
@@ -235,11 +244,11 @@ y_test = keras.utils.to_categorical(y_test, num_classes)
 #%%
 # A common Conv2D model
 input_image = Input(shape=(None, None, 1))
-x = Conv2D(64, (3, 3), activation='relu')(input_image)
-x = Conv2D(64, (3, 3), activation='relu')(x)
-x = AveragePooling2D((2, 2))(x)
-x = Conv2D(128, (3, 3), activation='relu')(x)
-x = Conv2D(128, (3, 3), activation='relu')(x)
+conv1 = Conv2D(64, (3, 3), activation='relu')(input_image)
+conv2 = Conv2D(64, (3, 3), activation='relu')(conv1)
+averagePooling= AveragePooling2D((2, 2))(conv2)
+conv3 = Conv2D(128, (3, 3), activation='relu')(averagePooling) 
+conv4 = Conv2D(128, (3, 3), activation='relu')(conv3)
 
 
 """now we reshape it as (batch_size, input_num_capsule, input_dim_capsule)
@@ -249,7 +258,7 @@ the length of Capsule is the proba,
 so the problem becomes a 7 two-classification problem.
 """
 
-x = Reshape((-1, 128))(x)
+x = Reshape((-1, 128))(conv4)
 capsule = Capsule(7, 16, 3, True)(x)
 output = Lambda(lambda z: K.sqrt(K.sum(K.square(z), 2)))(capsule)
 model = Model(inputs=input_image, outputs=output)
@@ -261,11 +270,11 @@ checkpoint = callbacks.ModelCheckpoint('CapsuleNet_weights-{epoch:02d}.h5',save_
 #model.compile(loss=keras.losses.categorical_crossentropy,optimizer=keras.optimizers.Adadelta(),metrics=['accuracy'])
 model.compile(loss=margin_loss, optimizer='adam', metrics=['accuracy']) 
 
-model.fit(x_train, y_train,batch_size=batch_size,epochs=epochs,verbose=1, validation_data=(x_validation, y_validation),callbacks=[log,checkpoint])
-score = model.evaluate(x_test, y_test, verbose=0)
+history = model.fit(x_train, y_train,batch_size=batch_size,epochs=epochs,verbose=1, validation_data=(x_validation, y_validation),callbacks=[log,checkpoint])
+create_plots(history) # plot accuracy and loss
 
+score = model.evaluate(x_test, y_test, verbose=0)
 model.save_weights('trained_model_capsuleNet.h5')
-model.save('CapsuleNet_model.h5')
 print('Trained model saved to \'trained_model.h5\'')
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])
@@ -307,7 +316,15 @@ else:
         epochs=epochs,
         validation_data=(x_test, y_test),
         workers=4)
-#%%
+#%%plot confusion matrix
+Y_pred = model.predict(x_test,verbose=2)
+y_pred = np.argmax(Y_pred,axis=1)
+for ix in range(num_classes):
+        print (ix, confusion_matrix(np.argmax(y_test,axis=1), y_pred)[ix].sum())
+print (confusion_matrix(np.argmax(y_test,axis=1), y_pred))
+    
+plot_confusion_matrix(confusion_matrix(np.argmax(y_test,axis=1), y_pred), classes=class_names)
+
 #%%
 model.load_weights('trained_model_capsuleNet.h5')  
 #%%
@@ -342,7 +359,7 @@ def deprocess_image(x):
 img_width = 48
 img_height = 48
 kept_filters = []
-for filter_index in range(0, 64):
+for filter_index in range(0, 128):
     # we only scan through the first 200 filters,
     # but there are actually 512 of this block5_cov1 layer
     print('Processing filter %d' % filter_index)
@@ -377,7 +394,7 @@ for filter_index in range(0, 64):
         input_img_data = np.random.random((1, img_width, img_height, 1))
     input_img_data = (input_img_data - 0.5) * 20 + 128
 
-    # we run gradient ascent for 30 steps
+    # we run gradient ascent for 20 steps
     # 根据刚刚定义的函数，现在可以对某个滤波器的激活值进行梯度上升，这里是梯度下降的逆向应用，即将当前图像像素点朝着梯度的方向去"增强"，让图像的像素点反过来和梯度方向去拟合
     for i in range(30):
         loss_value, grads_value = iterate([input_img_data])
@@ -424,6 +441,5 @@ ax = fig.add_subplot(111)
 ax.imshow(stitched_filters[:,:,0],cmap='gray')
 # save the result to disk
 imsave('stitched_filters_%dx%d.png' % (n, n), stitched_filters[:,:,0])
-
 
 
