@@ -19,7 +19,7 @@ class GetDataFromCSV:
         train_data_x = np.zeros([cls.TRAIN_END_POINT, 48, 48], dtype="uint8")
         with open(cls.DATA_CSV_FILE, newline='', encoding='utf-8') as f:
             reader = csv.reader(f)
-            _ = next(reader)
+            _, = next(reader)
             for k, data in enumerate(reader):
                 if k < cls.TRAIN_END_POINT:
                     pixels_formated = [int(a) for a in data[1].split(" ")]
