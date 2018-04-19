@@ -1,19 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Spyder Editor
-
-This is a temporary script file.
-"""
-
-# -*- coding: utf-8 -*-
-"""
 Created on Tue Apr 17 15:45:18 2018
 @author: yuxi
 """
 
 """Train a simple CNN-Capsule Network on the fer2013 images dataset.
 Without Data Augmentation:
-This is a fast Implement, just 20s/epcoh with a gtx 1070 gpu.
 """
 
 
@@ -156,11 +148,12 @@ class Capsule(Layer):
     def compute_output_shape(self, input_shape):
         return (None, self.num_capsule, self.dim_capsule)
 
-
+#%%
 batch_size = 128
 num_classes = 7
 epochs = 30
 class_names = ['Angry','Disgust','Fear','Happy','Sad','Surprise','Neutral']
+
 #%%load data
 def loadfer2013():
     
@@ -224,15 +217,16 @@ def plot_confusion_matrix(confusionmatrix, classes,
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
+    
 #%%
 data, label = loadfer2013()
-#%%
 x_train = data[0:28700]
 y_train = label[0:28700]
 x_validation = data[28709:32298]
 y_validation = label[28709:32298]
 x_test = data[32298:]
 y_test = label[32298:]
+
 #%%
 x_train = x_train.reshape(-1, 48, 48, 1).astype('float32') / 255.
 x_validation = x_validation.reshape(-1, 48, 48, 1).astype('float32') / 255.
@@ -241,6 +235,7 @@ x_test = x_test.reshape(-1, 48, 48, 1).astype('float32') / 255.
 y_train = keras.utils.to_categorical(y_train, num_classes)
 y_validation = keras.utils.to_categorical(y_validation, num_classes)
 y_test = keras.utils.to_categorical(y_test, num_classes)
+
 #%%
 # A common Conv2D model
 input_image = Input(shape=(None, None, 1))
