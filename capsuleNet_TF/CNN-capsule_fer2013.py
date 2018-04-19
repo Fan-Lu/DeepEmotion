@@ -10,7 +10,6 @@ Without Data Augmentation:
 This is a fast Implement, just 20s/epcoh with a gtx 1070 gpu.
 """
 
-
 from keras import backend as K
 from keras.engine.topology import Layer
 from keras import activations
@@ -25,6 +24,10 @@ import tensorflow as tf
 import numpy as np
 import keras
 from keras import callbacks
+import matplotlib.pyplot as plt
+import time
+from scipy.misc import imsave
+import itertools
 
 
 # the squashing function.
@@ -162,9 +165,59 @@ def loadfer2013():
        train_data_x[k, :, :] = pixels_in_picture_format
     label = tmp[1:,0].astype(np.uint8)
     return train_data_x, label
+   
+def create_plots(history):
 
+    plt.plot(history.history['acc'])
+    plt.plot(history.history['val_acc'])
+    plt.title('model accuracy')
+    plt.ylabel('accuracy')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.savefig('accuracy.png')
+    plt.clf()
+
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('model loss')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.savefig('loss.png')
+    plt.clf()
+    
+def plot_confusion_matrix(confusionmatrix, classes,
+                          normalize=False,
+                          title='Confusion matrix',
+                          cmap=plt.cm.Blues):
+    if normalize:
+        confusionmatrix = confusionmatrix.astype('float') / confusionmatrix.sum(axis=1)[:, np.newaxis]
+        print("Normalized confusion matrix")
+    else:
+        print('Confusion matrix, without normalization')
+
+    print(confusionmatrix)
+
+    plt.imshow(confusionmatrix, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes, rotation=45)
+    plt.yticks(tick_marks, classes)
+
+    fmt = '.2f' if normalize else 'd'
+    thresh = confusionmatrix.max() / 2.
+    for i, j in itertools.product(range(confusionmatrix.shape[0]), range(confusionmatrix.shape[1])):
+        plt.text(j, i, format(confusionmatrix[i, j], fmt),
+                 horizontalalignment="center",
+                 color="white" if confusionmatrix[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+
+#%%    
 data, label = loadfer2013()
-#%%
 x_train = data[0:28700]
 y_train = label[0:28700]
 x_validation = data[28709:32298]
@@ -254,3 +307,123 @@ else:
         epochs=epochs,
         validation_data=(x_test, y_test),
         workers=4)
+#%%
+#%%
+model.load_weights('trained_model_capsuleNet.h5')  
+#%%
+input_img = model.input
+
+# get the symbolic outputs of each "key" layer (we gave them unique names).
+#layer_dict = dict([(layer.name, layer) for layer in model.layers[1:]])
+
+
+def normalize(x):
+    # utility function to normalize a tensor by its L2 norm
+    return x / (K.sqrt(K.mean(K.square(x))) + 1e-5)
+
+def deprocess_image(x):
+    # normalize tensor: center on 0., ensure std is 0.1
+    x -= x.mean()
+    x /= (x.std() + 1e-5)
+    x *= 0.1
+
+    # clip to [0, 1]
+    x += 0.5
+    x = np.clip(x, 0, 1)
+
+    # convert to RGB array
+    x *= 255
+    if K.image_data_format() == 'channels_first':
+        x = x.transpose((1, 2, 0))
+    x = np.clip(x, 0, 255).astype('uint8')
+    return x
+
+
+img_width = 48
+img_height = 48
+kept_filters = []
+for filter_index in range(0, 64):
+    # we only scan through the first 200 filters,
+    # but there are actually 512 of this block5_cov1 layer
+    print('Processing filter %d' % filter_index)
+    start_time = time.time()
+
+    # we build a loss function that maximizes the activation
+    # of the nth filter of the layer considered
+    # 定义一个损失函数，这个损失函数将用于最大化某个指定滤波器的激活值。以该函数为优化目标优化后，我们可以真正看一下使得这个滤波器激活的究竟是些什么东西
+    layer_output = conv4 #the first convolusion layer's filter
+    if K.image_data_format() == 'channels_first':
+        loss = K.mean(layer_output[:, filter_index, :, :])
+    else:
+        loss = K.mean(layer_output[:, :, :, filter_index])
+
+    # we compute the gradient of the input picture wrt this loss
+    grads = K.gradients(loss, input_img)[0]
+
+    # normalization trick: we normalize the gradient
+    # 计算出来的梯度进行了正规化，使得梯度不会过小或过大。这种正规化能够使梯度上升的过程平滑进行
+    grads = normalize(grads)
+
+    # this function returns the loss and grads given the input picture
+    iterate = K.function([input_img], [loss, grads])
+
+    # step size for gradient ascent
+    step = 1.
+
+    # we start from a gray image with some random noise
+    if K.image_data_format() == 'channels_first':
+        input_img_data = np.random.random((1, 1, img_width, img_height))
+    else:
+        input_img_data = np.random.random((1, img_width, img_height, 1))
+    input_img_data = (input_img_data - 0.5) * 20 + 128
+
+    # we run gradient ascent for 30 steps
+    # 根据刚刚定义的函数，现在可以对某个滤波器的激活值进行梯度上升，这里是梯度下降的逆向应用，即将当前图像像素点朝着梯度的方向去"增强"，让图像的像素点反过来和梯度方向去拟合
+    for i in range(30):
+        loss_value, grads_value = iterate([input_img_data])
+        input_img_data += grads_value * step
+
+        print('Current loss value:', loss_value)
+        if loss_value <= 0.:
+            # some filters get stuck to 0, we can skip them
+            break
+
+    # decode the resulting input image
+    if loss_value > 0:
+        img = deprocess_image(input_img_data[0])
+        kept_filters.append((img, loss_value))
+    end_time = time.time()
+    print('Filter %d processed in %ds' % (filter_index, end_time - start_time))
+#%%
+# we will stich the best 64 filters on a 8 x 8 grid.
+n = 2
+
+# the filters that have the highest loss are assumed to be better-looking.
+# we will only keep the top 64 filters.
+kept_filters.sort(key=lambda x: x[1], reverse=True)
+kept_filters = kept_filters[:n * n]
+
+# build a black picture with enough space for
+# our 8 x 8 filters of size 128 x 128, with a 5px margin in between
+margin = 2
+width = n * img_width + (n - 1) * margin
+height = n * img_height + (n - 1) * margin
+stitched_filters = np.zeros((width, height, 1))
+
+# fill the picture with our saved filters
+for i in range(n):
+    for j in range(n):
+        img, loss = kept_filters[i * n + j]
+        stitched_filters[(img_width + margin) * i: (img_width + margin) * i + img_width,
+                         (img_height + margin) * j: (img_height + margin) * j + img_height, :] = img
+
+
+
+fig = plt.figure(figsize=(10,10))
+ax = fig.add_subplot(111)
+ax.imshow(stitched_filters[:,:,0],cmap='gray')
+# save the result to disk
+imsave('stitched_filters_%dx%d.png' % (n, n), stitched_filters[:,:,0])
+
+
+
