@@ -95,8 +95,7 @@ class CapsNet(nn.Module):
         self.digitCaps = CapsLayer(self.num_primaryCaps, 8, n_classes, 16, routing_module)
 
     def forward(self, input):
-        x = self.conv1(input)
-        x = F.relu(x)
+        x = F.relu(self.conv1(input))
         x = self.primaryCaps(x)
         x = self.digitCaps(x)
         probs = x.pow(2).sum(dim=2).sqrt()

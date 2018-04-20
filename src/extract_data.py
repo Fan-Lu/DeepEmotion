@@ -29,7 +29,7 @@ class GetDataFromCSV:
                     pixels_in_picture_format = np.reshape(pixels_formated, [48, 48])
                     train_data_y[k, :] = target
                     train_data_x[k, :, :] = pixels_in_picture_format
-                break
+                # break
         return train_data_x, train_data_y
 
     def get_test_data(cls):
@@ -91,7 +91,7 @@ class MyDataset(data.Dataset):
 
 if __name__ == "__main__":
     datacsv = GetDataFromCSV()
-    image, labels = datacsv.get_all_data()
+    image, labels = datacsv.get_test_data()
     image = torch.from_numpy(image).view(-1, 1, 48, 48)
     test_dataset = MyDataset(image, labels)
     print(len(image))
