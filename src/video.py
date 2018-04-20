@@ -1,5 +1,5 @@
 import cv2
-from src.classifier import Net
+from src.classifier import Classifier
 
 CASC_PATH = '../haarcascade_files/haarcascade_frontalface_default.xml'
 SIZE_FACE = 48
@@ -44,10 +44,6 @@ def format_image(image):
     return image
 
 
-# Load Model
-network = Net()
-network.build_network()
-
 video_capture = cv2.VideoCapture(0)
 font = cv2.FONT_HERSHEY_SIMPLEX
 
@@ -59,7 +55,7 @@ while True:
     # Capture frame-by-frame
     ret, frame = video_capture.read()
     # Predict result with network
-    result = network.predict(format_image(frame))
+    result = Classifier(format_image(frame)).data[0]
 
     # Draw face in frame
     # for (x,y,w,h) in faces:
@@ -69,9 +65,9 @@ while True:
     if result is not None:
         for index, emotion in enumerate(EMOTIONS):
             cv2.putText(frame, emotion, (10, index * 20 + 20), cv2.FONT_HERSHEY_PLAIN, 0.5, (0, 255, 0), 1);
-            cv2.rectangle(frame, (130, index * 20 + 10), (130 + int(result[0][index] * 100), (index + 1) * 20 + 4), (255, 0, 0), -1)
+            cv2.rectangle(frame, (130, index * 20 + 10), (130 + int(result[index] * 100), (index + 1) * 20 + 4), (255, 0, 0), -1)
 
-        face_image = feelings_faces[result[0].index(max(result[0]))]
+        face_image = feelings_faces[result.index(max(result))]
 
         # Ugly transparent fix
         for c in range(0, 3):
