@@ -1,13 +1,6 @@
 # Live Emotion recognition with CapsNet
 
-
 This repository is the out project about live emotion recognition using capsule network for the course Big Dat Ecosystem at UF.
-
-![Test]()
-
- 61.2% Accuracy on FER-2013 Dataset
-
- ![Test]()
 
 ## Dependencies
 
@@ -27,7 +20,21 @@ You have to request for access to the dataset or you can get it on [Kraggle](htt
 ```bash
 $ python video.py poc
 ```
+## Steps to Run Experiments
+Step 1: install the dependencies
+Tensorflow: edit the following in your terminate
+          conda create -n tensorflow pip python=3.5 
+          active tensorflow
+          pip install --ignore-installed --upgrade tensorflow
+Keras: edit the following comment in your terminate
+          pip install keras
+OpenCV: pip install opencv-python
+Pytorch: conda install pytorch torchvision -c pytorch
 
-## Paper
+Step 2: download the Fer2013 dataset in the following web:
+https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge/data
 
-[Link]()
+Step 3: run the code files in the folders
+First, you should download the Emojis and Haarcascade_files in your local folders.
+Second, you should download the model which we have already trained, which are h5 files. There are two models we trained one is CNN model and the other is CNN-CapsNet model.
+Finally, you can run the demo.py in the folders, and there are other three files, which represent different models’ code. You can also run the code in the src folders, which contain the Pytorch version.
