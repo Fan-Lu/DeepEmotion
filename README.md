@@ -3,7 +3,7 @@
 
 This repository is the out project about live emotion recognition using capsule network for the course Big Dat Ecosystem at UF.
 
-![Test](https://github.com/Fan-Lu/DeepEmotion/blob/master/res/capsule_net%20model%20architecture.PNG)
+![Test]()
 
  61.2% Accuracy on FER-2013 Dataset
 
