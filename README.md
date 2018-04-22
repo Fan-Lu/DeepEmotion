@@ -25,7 +25,7 @@ You have to request for access to the dataset or you can get it on [Kraggle](htt
 ## Usage
 
 ```bash
-$ python emotion_recognition.py poc
+$ python video.py poc
 ```
 
 ## Paper
