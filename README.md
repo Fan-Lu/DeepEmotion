@@ -1,12 +1,40 @@
-# DeepEmotion
-# Team Members:
+# Live Emotion recognition with CapsNet
 
-Fan Lu, Xi Yu 
-# Dataset Description
-The data consists of 48x48 pixel grayscale images of faces. The faces have been automatically registered so that the face is more or less centered and occupies about the same amount of space in each image. The task is to categorize each face based on the emotion shown in the facial expression in to one of seven categories (0=Angry, 1=Disgust, 2=Fear, 3=Happy, 4=Sad, 5=Surprise, 6=Neutral).
+This repository is the out project about live emotion recognition using capsule network for the course Big Dat Ecosystem at UF.
 
-train.csv contains two columns, "emotion" and "pixels". The "emotion" column contains a numeric code ranging from 0 to 6, inclusive, for the emotion that is present in the image. The "pixels" column contains a string surrounded in quotes for each image. The contents of this string a space-separated pixel values in row major order. test.csv contains only the "pixels" column and your task is to predict the emotion column.
+## Dependencies
 
-The training set consists of 28,709 examples. The public test set used for the leaderboard consists of 3,589 examples. The final test set, which was used to determine the winner of the competition, consists of another 3,589 examples.
+- [NumPy](http://docs.scipy.org/doc/numpy-1.10.1/user/install.html)
+- [Tensorflow](https://www.tensorflow.org/versions/r0.8/get_started/os_setup.html)
+- [TFLearn](https://github.com/tflearn/tflearn#installation)
+- [OpenCV](https://opencv-python-tutroals.readthedocs.io/en/latest/)
 
-This dataset was prepared by Pierre-Luc Carrier and Aaron Courville, as part of an ongoing research project. They have graciously provided the workshop organizers with a preliminary version of their dataset to use for this contest.
+## Dataset
+
+We use the [FER-2013 Faces Database](http://www.socsci.ru.nl:8180/RaFD2/RaFD?p=main), a set of 28,709 pictures of people displaying 7 emotional expressions (angry, disgusted, fearful, happy, sad, surprised and neutral).
+
+You have to request for access to the dataset or you can get it on [Kraggle](https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge/data).
+
+## Usage
+
+```bash
+$ python video.py poc
+```
+## Steps to Run Experiments
+Step 1: install the dependencies
+Tensorflow: edit the following in your terminate
+          conda create -n tensorflow pip python=3.5 
+          active tensorflow
+          pip install --ignore-installed --upgrade tensorflow
+Keras: edit the following comment in your terminate
+          pip install keras
+OpenCV: pip install opencv-python
+Pytorch: conda install pytorch torchvision -c pytorch
+
+Step 2: download the Fer2013 dataset in the following web:
+https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge/data
+
+Step 3: run the code files in the folders
+First, you should download the Emojis and Haarcascade_files in your local folders.
+Second, you should download the model which we have already trained, which are h5 files. There are two models we trained one is CNN model and the other is CNN-CapsNet model.
+Finally, you can run the demo.py in the folders, and there are other three files, which represent different models’ code. You can also run the code in the src folders, which contain the Pytorch version.
